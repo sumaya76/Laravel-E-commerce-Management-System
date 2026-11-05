@@ -32,6 +32,7 @@ A Laravel application for managing an e-commerce product catalog.
 
    ```bash
    php artisan migrate --seed
+   php artisan storage:link
    ```
 
 5. Install and build frontend assets:
@@ -53,19 +54,40 @@ A Laravel application for managing an e-commerce product catalog.
 - A **Subcategory** belongs to a Category and has many **Products**.
 - A **Product** belongs to a Subcategory; its Category is obtained through that Subcategory. This avoids storing a second category foreign key on products that could disagree with the subcategory.
 - Category, Subcategory, and Product slugs are unique. Subcategory names are unique within their category.
-- Prices use `DECIMAL(10,2)`. The old price is required in the database; product image paths are nullable.
+- Prices use `DECIMAL(10,2)`. The old price is required; new price must be positive and no greater than the old price. Both accept up to two decimal places.
+- Product images are optional. Accepted formats are JPG, PNG, and WebP, up to 2 MB; files are stored on Laravel's public disk and require `php artisan storage:link`.
+- Replacing or removing a product image deletes the previous file. Deleting a product removes its image; products with no image or a missing image display a local placeholder.
 
 Foreign keys use restrictive deletion: a category with subcategories cannot be deleted, and a subcategory with products cannot be deleted. This prevents accidental loss of related catalog records. The application must also prevent changing a subcategory's category while it has products.
 
 ## Project structure
 
 - `app/Models` — Eloquent catalog models and relationships
-- `app/Http/Controllers` — HTTP controllers
+- `app/Http/Controllers` — catalog resource controllers
+- `app/Http/Requests` — catalog form validation
 - `database/migrations` — database schema
 - `database/seeders` — demo catalog data
 - `routes/web.php` — web routes
-- `resources/views` — Blade templates
+- `resources/views` — catalog list and form Blade templates
 - `tests` — automated tests
+
+## Category and subcategory management
+
+- Categories and subcategories support list, create, edit, and delete operations at `/categories` and `/subcategories`.
+- Names are validated; slugs are generated from names and made unique. Subcategory names must be unique within their category.
+- Subcategory forms list existing categories only and validate the selected category.
+- A category with subcategories and a subcategory with products cannot be deleted. A subcategory with products cannot be moved to another category.
+- Delete actions require browser confirmation, and successful or blocked actions display a message.
+
+Named resource routes: `categories.index/create/store/edit/update/destroy` and `subcategories.index/create/store/edit/update/destroy`.
+
+## Product management
+
+- Products support list, create, edit, and delete operations at `/products`.
+- The product form captures category, subcategory, name, description, image, old price, and new price.
+- The subcategory selector is filtered by category in the form, and the server validates that the selected subcategory belongs to the submitted category.
+- Product slugs are unique and remain stable when the product name is edited.
+- Named resource routes: `products.index/create/store/edit/update/destroy`.
 
 ## Database and tests
 
