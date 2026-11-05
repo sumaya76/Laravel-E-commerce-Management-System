@@ -10,3 +10,5 @@ Route::resource('subcategories', \App\Http\Controllers\SubcategoryController::cl
     ->except('show');
 Route::resource('products', \App\Http\Controllers\ProductController::class)
     ->except('show');
+Route::get('/products/{product:slug}', [\App\Http\Controllers\ProductController::class, 'show'])
+    ->name('products.show');

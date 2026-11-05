@@ -6,6 +6,7 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -18,12 +19,15 @@ class ProductController extends Controller
 {
     public function index(): View
     {
-        $products = Product::query()
-            ->with(['subcategory.category'])
+        $categories = Category::query()
+            ->with([
+                'subcategories' => fn (HasMany $query) => $query->orderBy('name'),
+                'subcategories.products' => fn (HasMany $query) => $query->orderBy('name'),
+            ])
             ->orderBy('name')
             ->paginate(10);
 
-        return view('products.index', compact('products'));
+        return view('products.index', compact('categories'));
     }
 
     public function create(): View
@@ -63,6 +67,13 @@ class ProductController extends Controller
         $product->load('subcategory');
 
         return view('products.edit', compact('categories', 'product'));
+    }
+
+    public function show(Product $product): View
+    {
+        $product->load(['subcategory.category']);
+
+        return view('products.show', compact('product'));
     }
 
     public function update(UpdateProductRequest $request, Product $product): RedirectResponse

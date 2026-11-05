@@ -79,15 +79,38 @@ Foreign keys use restrictive deletion: a category with subcategories cannot be d
 - A category with subcategories and a subcategory with products cannot be deleted. A subcategory with products cannot be moved to another category.
 - Delete actions require browser confirmation, and successful or blocked actions display a message.
 
-Named resource routes: `categories.index/create/store/edit/update/destroy` and `subcategories.index/create/store/edit/update/destroy`.
-
 ## Product management
 
 - Products support list, create, edit, and delete operations at `/products`.
 - The product form captures category, subcategory, name, description, image, old price, and new price.
 - The subcategory selector is filtered by category in the form, and the server validates that the selected subcategory belongs to the submitted category.
 - Product slugs are unique and remain stable when the product name is edited.
-- Named resource routes: `products.index/create/store/edit/update/destroy`.
+- The product list is grouped by category and subcategory and eager-loads related products to avoid N+1 queries.
+- Product details use the SEO-friendly `/products/{slug}` URL. The slug stays stable when a product name changes.
+
+## Route reference
+
+| HTTP method | URI | Route name | Purpose |
+|---|---|---|---|
+| GET | `/categories` | `categories.index` | List categories |
+| GET | `/categories/create` | `categories.create` | Show category form |
+| POST | `/categories` | `categories.store` | Create category |
+| GET | `/categories/{category}/edit` | `categories.edit` | Show category edit form |
+| PUT/PATCH | `/categories/{category}` | `categories.update` | Update category |
+| DELETE | `/categories/{category}` | `categories.destroy` | Delete category |
+| GET | `/subcategories` | `subcategories.index` | List subcategories |
+| GET | `/subcategories/create` | `subcategories.create` | Show subcategory form |
+| POST | `/subcategories` | `subcategories.store` | Create subcategory |
+| GET | `/subcategories/{subcategory}/edit` | `subcategories.edit` | Show subcategory edit form |
+| PUT/PATCH | `/subcategories/{subcategory}` | `subcategories.update` | Update subcategory |
+| DELETE | `/subcategories/{subcategory}` | `subcategories.destroy` | Delete subcategory |
+| GET | `/products` | `products.index` | List products grouped by category/subcategory |
+| GET | `/products/create` | `products.create` | Show product form |
+| POST | `/products` | `products.store` | Create product |
+| GET | `/products/{product}/edit` | `products.edit` | Show product edit form |
+| PUT/PATCH | `/products/{product}` | `products.update` | Update product |
+| DELETE | `/products/{product}` | `products.destroy` | Delete product |
+| GET | `/products/{slug}` | `products.show` | Show product details by slug |
 
 ## Database and tests
 

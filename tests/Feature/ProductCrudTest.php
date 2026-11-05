@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Subcategory;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -207,5 +209,45 @@ class ProductCrudTest extends TestCase
             'name' => 'Renamed Smartphone',
             'slug' => $originalSlug,
         ]);
+    }
+
+    public function test_product_details_are_resolved_by_slug(): void
+    {
+        $this->seed();
+        $product = Product::query()->where('slug', 'sample-smartphone')->firstOrFail();
+
+        $this->get(route('products.show', $product->slug))
+            ->assertOk()
+            ->assertSee($product->name)
+            ->assertSee($product->description)
+            ->assertSee($product->subcategory->category->name)
+            ->assertSee($product->subcategory->name);
+
+        $this->get('/products/not-a-real-product')
+            ->assertNotFound();
+    }
+
+    public function test_product_listing_is_grouped_and_eager_loads_products(): void
+    {
+        $this->seed();
+        $productQueries = 0;
+
+        DB::listen(function (QueryExecuted $query) use (&$productQueries): void {
+            if (preg_match('/\bproducts\b/i', $query->sql) === 1) {
+                $productQueries++;
+            }
+        });
+
+        $this->get(route('products.index'))
+            ->assertOk()
+            ->assertSee('Electronics')
+            ->assertSee('Mobile Phones')
+            ->assertSee('Sample Smartphone')
+            ->assertSee('Books')
+            ->assertSee('Fiction')
+            ->assertSee('Sample Novel')
+            ->assertSee(route('products.show', 'sample-smartphone'));
+
+        $this->assertSame(1, $productQueries, 'The grouped catalog should eager-load products in one query.');
     }
 }
